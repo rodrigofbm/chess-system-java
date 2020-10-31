@@ -6,7 +6,7 @@ public class Program {
 
 	public static void main(String[] args) {
 		ChessMatch chessMatch = new ChessMatch();
-		
+		System.out.println((char) ('a' + 2));
 		UI.printBoard(chessMatch.getPieces());
 	}
 }
