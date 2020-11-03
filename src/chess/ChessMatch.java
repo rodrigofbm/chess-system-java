@@ -1,5 +1,6 @@
 package chess;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ public class ChessMatch {
 	private boolean check;
 	private boolean checkMate;
 	private ChessPiece enPassantVulnerable;
+	private ChessPiece promoted;
 
 	private List<Piece> piecesOnTheBoard = new ArrayList<Piece>();
 	private List<Piece> capturedPieces = new ArrayList<Piece>();
@@ -80,6 +82,16 @@ public class ChessMatch {
 		}
 
 		ChessPiece movedPiece = (ChessPiece) board.piece(target);
+
+		// #especial move promotion
+		promoted = null;
+		if (movedPiece instanceof Pawn) {
+			if ((movedPiece.getColor() == Color.WHITE && targetPosition.getRow() == 0)
+					|| (movedPiece.getColor() == Color.BLACK && targetPosition.getRow() == 7)) {
+				promoted = movedPiece;
+				promoted = replacePromotedPiece("Q");
+			}
+		}
 
 		check = testCheck(opponent(currentPlayer)) ? true : false;
 
@@ -190,7 +202,7 @@ public class ChessMatch {
 			if (target.getColumn() != origin.getColumn() && capturedPiece == enPassantVulnerable) {
 				ChessPiece pawn = (ChessPiece) board.removePiece(target);
 				Position pawnPosition;
-				
+
 				if (p.getColor() == Color.WHITE) {
 					pawnPosition = new Position(3, target.getColumn());
 				} else {
@@ -200,6 +212,33 @@ public class ChessMatch {
 				board.placePiece(pawn, pawnPosition);
 			}
 		}
+	}
+
+	public ChessPiece replacePromotedPiece(String type) {
+		if (promoted == null) {
+			throw new IllegalStateException("There's no piece to be promoted");
+		}
+		if (!type.equals("B") && !type.equals("N") && !type.equals("R") && !type.equals("Q")) {
+			throw new InvalidParameterException("Invalid type for promotion");
+		}
+
+		Position pos = promoted.getChessPosition().toPosition();
+		Piece p = board.removePiece(pos);
+		piecesOnTheBoard.remove(p);
+		ChessPiece newPiece = this.newPiece(type, promoted.getColor());
+		board.placePiece(newPiece, pos);
+		piecesOnTheBoard.add(newPiece);
+		
+		return newPiece;
+
+	}
+
+	private ChessPiece newPiece(String type, Color color) {
+		if (type.equals("B")) return new Bishop(board, color);
+		if (type.equals("N")) return new Knight(board, color);
+		if (type.equals("Q")) return new Queen(board, color);
+
+		return new Rook(board, color);
 	}
 
 	private Color opponent(Color color) {
@@ -335,5 +374,9 @@ public class ChessMatch {
 
 	public ChessPiece getEnPassantVulnerable() {
 		return enPassantVulnerable;
+	}
+
+	public ChessPiece getPromoted() {
+		return promoted;
 	}
 }
